@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+  <string id="32001">Octoprint Connection Settings</string>
+  <string id="32002">IP Address</string>
+  <string id="32006">API Key</string>
+
+</strings>
