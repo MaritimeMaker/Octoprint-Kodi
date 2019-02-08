@@ -1,5 +1,5 @@
 # Octoprint Kodi
-
+a simple kodi addon to monitor an octoprint server, shows stats and allows for pausing and resuming prints
 
 # Installation
 download zip file

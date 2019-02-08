@@ -16,36 +16,30 @@ ACTION_ENTER = 7
 ACTION_SELECT = 93
 
 __addon__ = xbmcaddon.Addon()
-api1 = __addon__.getSetting("api1")
-host1 = __addon__.getSetting("url1")
+api = __addon__.getSetting("api1")
+host = __addon__.getSetting("url1")
 
 
 data_path = xbmc.translatePath(__addon__.getAddonInfo('profile'))
 black = os.path.join(__addon__.getAddonInfo('path'), 'resources', 'media', 'black.png')
 
-COORDS = ((0, 0, 1280, 720),
-          (640, 0, 640, 360),
-          (0, 360, 640, 360),
-          (640, 360, 640, 360))
+coords = (0, 0, 1280, 720)
 txtctl = 0
 
-def get_urls():
-		url = "http://" + host1 + ":8080/?action=snapshot"
-		yield url
+
+url = "http://" + host + ":8080/?action=snapshot"
+
 
 def file_fmt():
     return os.path.join(data_path, "{0}.{{0}}.jpg".format(time.time()))
 
 
-urls = list(get_urls())
-
 class CamView(xbmcgui.WindowDialog):
 	def __init__(self):
-		self.host = host1
-		self.api = api1
+		self.host = host
 		self.s = requests.Session()
 		headers = {
-			'X-Api-Key': api1,
+			'X-Api-Key': api,
 			'Content-Type': 'application/json'
 			}
 		self.s.headers.update(headers)
@@ -53,27 +47,21 @@ class CamView(xbmcgui.WindowDialog):
 		self.image_controls = []
 		self.txt_controls = []
 		image_file_fmt = file_fmt()
-		for i, (coords, url) in enumerate(zip(COORDS, urls)):
-			image_file = image_file_fmt.format(i)
-			urllib.urlretrieve(url, image_file)
-			control = xbmcgui.ControlImage(*coords, filename=image_file, aspectRatio=2)
-			self.image_controls.append(control)
-			self.addControl(control)
-			self.addControl(xbmcgui.ControlLabel(0, 0, 1280, 720, "Octoprint", alignment = 0x00000000, font="font34", textColor="0xFFFFFFFF"))
+		image_file = image_file_fmt.format(1)
+		urllib.urlretrieve(url, image_file)
+		self.cam = xbmcgui.ControlImage(*coords, filename=image_file, aspectRatio=2)
+		self.addControl(self.cam)
+		self.addControl(xbmcgui.ControlLabel(0, 0, 1280, 720, "Octoprint", alignment = 0x00000000, font="font34", textColor="0xFFFFFFFF"))
 		self.closing = False
 		temp = "nothing"
-		status = xbmcgui.ControlLabel(0, 30, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
-		jobname = xbmcgui.ControlLabel(0, 50, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
-		tempstat = xbmcgui.ControlLabel(0, 70, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
-		progress = xbmcgui.ControlLabel(0, 90, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
-		self.txt_controls.append(status)
-		self.txt_controls.append(jobname)
-		self.txt_controls.append(tempstat)
-		self.txt_controls.append(progress)
-		self.addControl(status)
-		self.addControl(jobname)
-		self.addControl(tempstat)
-		self.addControl(progress)
+		self.status = xbmcgui.ControlLabel(0, 30, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
+		self.jobname = xbmcgui.ControlLabel(0, 50, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
+		self.tempstat = xbmcgui.ControlLabel(0, 70, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
+		self.progress = xbmcgui.ControlLabel(0, 90, 1280, 720, temp, alignment = 0x00000000, font="font14", textColor="0xFFFFFFFF")
+		self.addControl(self.status)
+		self.addControl(self.jobname)
+		self.addControl(self.tempstat)
+		self.addControl(self.progress)
 		
 	def __enter__(self):
 		return self
@@ -174,19 +162,14 @@ class CamView(xbmcgui.WindowDialog):
 			d = datetime(1,1,1) + sec
 			timeleft = str(self.get_print_progress()) + "% timeleft: " + str(d.day-1) + " days " + str(d.hour) + ":" + str(d.minute) + ":" + str(d.second)
 			printerstate = "Status: " + str(self.get_printerState())
-			for i, (url, image_control) in enumerate(zip(urls, viewer.image_controls)):
-				image_file = image_file_fmt.format(i)
-				urllib.urlretrieve(url, image_file)
-				image_control.setImage(image_file, useCache=False)
-			status1 = viewer.txt_controls[0]
-			status1.setLabel(str(printerstate))
-			jobline1 = viewer.txt_controls[1]
-			jobline1.setLabel(str(jobline))
-			tempstat1 = viewer.txt_controls[2]
-			tempstat1.setLabel(str(tempsline))
-			timestat = viewer.txt_controls[3]
-			timestat.setLabel(str(timeleft))
-			xbmc.sleep(500)
+			image_file = image_file_fmt.format(1)
+			urllib.urlretrieve(url, image_file)
+			viewer.cam.setImage(image_file, useCache=False)
+			viewer.status.setLabel(str(printerstate))
+			viewer.jobname.setLabel(str(jobline))
+			viewer.tempstat.setLabel(str(tempsline))
+			viewer.progress.setLabel(str(timeleft))
+			xbmc.sleep(200)
 
 
 	def stop(self):
