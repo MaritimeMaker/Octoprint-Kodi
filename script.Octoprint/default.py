@@ -24,8 +24,6 @@ data_path = xbmc.translatePath(__addon__.getAddonInfo('profile'))
 black = os.path.join(__addon__.getAddonInfo('path'), 'resources', 'media', 'black.png')
 
 coords = (0, 0, 1280, 720)
-txtctl = 0
-
 
 url = "http://" + host + ":8080/?action=snapshot"
 
@@ -36,7 +34,6 @@ def file_fmt():
 
 class CamView(xbmcgui.WindowDialog):
 	def __init__(self):
-		self.host = host
 		self.s = requests.Session()
 		headers = {
 			'X-Api-Key': api,
@@ -44,8 +41,6 @@ class CamView(xbmcgui.WindowDialog):
 			}
 		self.s.headers.update(headers)
 		self.addControl(xbmcgui.ControlImage(0, 0, 1280, 720, black))
-		self.image_controls = []
-		self.txt_controls = []
 		image_file_fmt = file_fmt()
 		image_file = image_file_fmt.format(1)
 		urllib.urlretrieve(url, image_file)
@@ -67,22 +62,36 @@ class CamView(xbmcgui.WindowDialog):
 		return self
 
 	def get_bed_temp(self):
-		data = self.s.get('http://' + self.host + '/api/printer/bed').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/printer/bed').content.decode('utf-8').split('\n')
 		for line in data:
 			if 'actual' in line:
 				return line[line.find(':')+1:line.find(',')]
 		return 0
 		
 	def get_extruder_current_temp(self):
-		data = self.s.get('http://' + self.host + '/api/printer/tool').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/printer/tool').content.decode('utf-8').split('\n')
+		tool=0
+		tool0=0
+		tool1=0
+		single=0
 		for line in data:
+			if 'tool0' in line:
+				tool='0'
+			if 'tool1' in line:
+				tool='1'
 			if 'actual' in line:
-				return line[line.find(':')+1:line.find(',')]
-		return 0
+				if '0' in tool:
+					tool0 = line[line.find(':')+1:line.find(',')]
+					single = "Ext: " + tool0 + "c"
+				if '1' in tool:
+					tool1 = line[line.find(':')+1:line.find(',')]
+					dual = "Ext1: " + tool0 + "c Ext2:" + tool1 + "c"
+					return dual
+		return single
 		
 
 	def get_file_printing(self):
-		data = self.s.get('http://' + self.host + '/api/job').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/job').content.decode('utf-8').split('\n')
 		for line in data:
 			if 'name' in line:
 			# check if null
@@ -93,7 +102,7 @@ class CamView(xbmcgui.WindowDialog):
 		return 0
 		
 	def get_print_progress(self):
-		data = self.s.get('http://' + self.host + '/api/job').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/job').content.decode('utf-8').split('\n')
 		for line in data:
 			if 'completion' in line:
 			# check if null
@@ -104,7 +113,7 @@ class CamView(xbmcgui.WindowDialog):
 		return 0
 
 	def get_estimatePrinttime(self):
-		data = self.s.get('http://' + self.host + '/api/job').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/job').content.decode('utf-8').split('\n')
 		for line in data:
 			if 'estimatedPrintTime' in line:
 			# check if null
@@ -115,7 +124,7 @@ class CamView(xbmcgui.WindowDialog):
 		return 0
 			
 	def get_printTimeLeft(self):
-		data = self.s.get('http://' + self.host + '/api/job').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/job').content.decode('utf-8').split('\n')
 		for line in data:
 			if 'printTimeLeft' in line:
 			# check if null
@@ -127,7 +136,7 @@ class CamView(xbmcgui.WindowDialog):
 		return 0
 		
 	def get_printerState(self):
-		data = self.s.get('http://' + self.host + '/api/job').content.decode('utf-8').split('\n')
+		data = self.s.get('http://' + host + '/api/job').content.decode('utf-8').split('\n')
 		for line in data:
 			if 'state' in line:
 			# check if null
@@ -138,7 +147,7 @@ class CamView(xbmcgui.WindowDialog):
 		return "Detenido..."
 		
 	def pausePrint(self):
-		r = self.s.post('http://' + self.host + '/api/job', json={'command': 'pause'})
+		r = self.s.post('http://' + host + '/api/job', json={'command': 'pause'})
 
 
 		
@@ -154,9 +163,9 @@ class CamView(xbmcgui.WindowDialog):
 		self.show()
 		while(not self.closing):
 			image_file_fmt = file_fmt()
-			nozzeltemp = self.get_extruder_current_temp()
+			nozzeltemp = str(self.get_extruder_current_temp())
 			heatbed = self.get_bed_temp()
-			tempsline = "Ext1:" + str(nozzeltemp) + "c   bed:" + str(heatbed) + "c"
+			tempsline = str(nozzeltemp) + "  bed:" + str(heatbed) + "c"
 			jobline = "Filename: " + str(self.get_file_printing())
 			sec = timedelta(seconds=self.get_printTimeLeft())
 			d = datetime(1,1,1) + sec
