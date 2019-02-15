@@ -169,7 +169,7 @@ class CamView(xbmcgui.WindowDialog):
 			jobline = "Filename: " + str(self.get_file_printing())
 			sec = timedelta(seconds=self.get_printTimeLeft())
 			d = datetime(1,1,1) + sec
-			timeleft = str(self.get_print_progress()) + "% timeleft: " + str(d.day-1) + " days " + str(d.hour) + ":" + str(d.minute) + ":" + str(d.second)
+			timeleft = str(self.get_print_progress()) + "% timeleft: " + ( str(d.day-1) + " days " if d.day-1 else "" ) + str(d.hour) + ":" + str(d.minute).zfill(2) + ":" + str(d.second).zfill(2)
 			printerstate = "Status: " + str(self.get_printerState())
 			image_file = image_file_fmt.format(1)
 			urllib.urlretrieve(url, image_file)
